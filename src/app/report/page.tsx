@@ -344,14 +344,14 @@ export default function ReportPage() {
         }));
         setReports(formattedReports);
       } else {
-        router.push("/login");
+        router.push("/sign-in");
       }
     };
     checkUser();
   }, [router]);
 
   return (
-    <div className="p-8 max-w-4xl mx-auto mt-10">
+    <div className="p-8 max-w-4xl mx-auto ">
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
         Report waste
       </h1>
