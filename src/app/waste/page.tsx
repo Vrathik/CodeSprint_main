@@ -19,7 +19,7 @@ function MapView() {
   const [reports, setReports] = useState<Report[]>([]);
   const [coordinates] = useState({
     lat: 12.9141, // Default center (e.g., Mangalore city center)
-    lng: 74.8560,
+    lng: 74.856,
   });
 
   useEffect(() => {
@@ -37,11 +37,8 @@ function MapView() {
   }, []);
 
   return (
-    <div className="mt-20 mr-20">
-      <GoogleMapSection
-        reports={reports}
-        coordinates={coordinates}
-      />
+    <div className="flex flex-item justify-center ">
+      <GoogleMapSection reports={reports} coordinates={coordinates} />
     </div>
   );
 }
