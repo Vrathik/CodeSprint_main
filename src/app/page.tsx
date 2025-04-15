@@ -85,8 +85,8 @@ export default function Home() {
   };
 
   return (
-    <div className={`container mr-64 mt-8  mx-auto px-4 py-16`}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 mb-20 mt-10 mr-48">
+    <div className={`container mt-8  mx-auto px-4 py-16`}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 mb-20 mt-10 ">
         <section className="flex flex-col justify-between mt-6">
           <AnimatedGlobe />
           <h1 className="text-6xl font-bold mb-6 text-gray-800 tracking-tight">
@@ -120,7 +120,7 @@ export default function Home() {
         </section>
       </div>
 
-      <section className="grid md:grid-cols-3 gap-28 mb-20 ml-14">
+      <section className="grid md:grid-cols-3 gap-28 mb-20 ">
         <FeatureCard
           icon={Leaf}
           title="Eco-Friendly"
