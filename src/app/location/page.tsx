@@ -37,7 +37,7 @@ function MapView() {
   });
 
   return (
-    <div className="">
+    <div className=" ">
       <div>
         <GoogleMapSection bins={bins} coordinates={coordinates} />
       </div>

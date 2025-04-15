@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { Toaster } from "react-hot-toast";
 import { getAvailableRewards, getUserByEmail } from "@/utils/db/actions";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
+import { neobrutalism } from "@clerk/themes";
 import { GoogleMapsProvider } from "@/components/providers/GoogleMapsProvider";
 import Navbar from "@/components/Navbar";
 
@@ -65,15 +65,7 @@ export default function RootLayout({
   return (
     <ClerkProvider
       appearance={{
-        baseTheme: dark,
-        elements: {
-          card: "bg-white shadow-md rounded-lg",
-          navbar: "bg-white shadow-sm",
-          footerActionLink: "text-green-600 hover:text-green-700",
-          formButtonPrimary: "bg-green-600 hover:bg-green-700 text-white",
-          formFieldInput:
-            "border-gray-300 focus:border-green-500 focus:ring-green-500",
-        },
+        baseTheme: neobrutalism,
       }}
     >
       <html lang="en">

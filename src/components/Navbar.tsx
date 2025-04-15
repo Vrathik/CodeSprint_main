@@ -309,20 +309,11 @@ export default function Navbar() {
 
                     <DropdownMenuItem className="py-2">
                       <Link
-                        href="/profile"
+                        href="/user-profile"
                         className="flex items-center w-full"
                       >
                         <User className="h-4 w-4 mr-2 text-gray-500" />
                         Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="py-2">
-                      <Link
-                        href="/settings"
-                        className="flex items-center w-full"
-                      >
-                        <Settings className="h-4 w-4 mr-2 text-gray-500" />
-                        Settings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

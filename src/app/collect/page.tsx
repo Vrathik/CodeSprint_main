@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import {
   Trash2,
   MapPin,
   CheckCircle,
   Clock,
-  ArrowRight,
-  Camera,
   Upload,
   Loader,
   Calendar,
@@ -40,6 +40,8 @@ type CollectionTask = {
 const ITEMS_PER_PAGE = 5;
 
 export default function CollectPage() {
+  const router = useRouter();
+  const { isLoaded, userId, sessionId, isSignedIn } = useAuth();
   const [tasks, setTasks] = useState<CollectionTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredWasteType, setHoveredWasteType] = useState<string | null>(null);
@@ -64,41 +66,67 @@ export default function CollectPage() {
   } | null>(null);
   const [reward, setReward] = useState<number | null>(null);
 
+  // Check auth status and redirect if not signed in
   useEffect(() => {
+    // Wait for Clerk to load authentication data
+    if (!isLoaded) return;
+
+    // If user is not signed in, redirect to sign-in page
+    if (!isSignedIn) {
+      toast.error("You must be signed in to access this page.");
+      router.replace("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Fetch user data and tasks after authentication is confirmed
+  useEffect(() => {
+    // Only proceed if auth is loaded and user is signed in
+    if (!isLoaded || !isSignedIn) return;
+
     const fetchUserAndTasks = async () => {
       setLoading(true);
       try {
-        const userEmail = localStorage.getItem("userEmail");
-        if (userEmail) {
-          const fetchedUser = await getUserByEmail(userEmail);
-          if (fetchedUser) {
-            setUser(fetchedUser);
-          } else {
-            toast.error("User not found. Please log in again.");
-          }
+        // Get user data from your database using Clerk's userId
+        // You may need to adjust this based on how you store user data
+        const fetchedUser = await getUserByEmail(userId as string);
+        if (fetchedUser) {
+          setUser(fetchedUser);
         } else {
-          toast.error("User not logged in. Please log in.");
+          toast.error(
+            "User not found in database. Please update your profile.",
+          );
         }
 
+        // Fetch tasks data
         const fetchedTasks = await getWasteCollectionTasks();
         setTasks(fetchedTasks as CollectionTask[]);
       } catch (error) {
-        console.error("Error fetching user and tasks:", error);
-        toast.error("Failed to load user data and tasks. Please try again.");
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserAndTasks();
-  }, []);
+  }, [isLoaded, isSignedIn, userId]);
+
+  // If Clerk hasn't loaded yet or the user isn't signed in, show loading state
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <Loader className="animate-spin h-12 w-12 text-gray-500 mb-4" />
+        <p className="text-gray-600">Verifying your account...</p>
+      </div>
+    );
+  }
 
   const handleStatusChange = async (
     taskId: number,
     newStatus: CollectionTask["status"],
   ) => {
     if (!user) {
-      toast.error("Please log in to collect waste.");
+      toast.error("User profile not found. Please update your profile.");
       return;
     }
 
