@@ -1,5 +1,7 @@
 // @ts-nocheck
 "use client";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { MapPin, Upload, CheckCircle, Loader, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,10 +19,8 @@ import {
   createReport,
   getRecentReports,
 } from "@/utils/db/actions";
-import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useGoogleMaps } from "@/components/providers/GoogleMapsProvider";
-
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -32,6 +32,7 @@ const loaderConfig = {
   googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
   libraries: libraries,
 };
+
 export default function ReportPage() {
   const [user, setUser] = useState<{
     id: number;
@@ -39,6 +40,15 @@ export default function ReportPage() {
     name: string;
   } | null>(null);
   const router = useRouter();
+  const { isLoaded: authLoaded, userId, isSignedIn } = useAuth();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (authLoaded && !isSignedIn) {
+      toast.error("You must be logged in to access this page");
+      router.push("/sign-in");
+    }
+  }, [authLoaded, isSignedIn, router]);
 
   // Map related state
   const [mapCenter, setMapCenter] = useState(defaultCenter);
@@ -225,7 +235,7 @@ export default function ReportPage() {
           "quantity": "estimated quantity with unit",
           "confidence": confidence level as a number between 0 and 1
         }
-               Important: For wasteType, provide a simple text description, not an object. For example: "Mixed plastic and paper waste" or "Organic waste with some metal containers" and dont mention that its difficult to assess definitively from the image`;
+     Important: For wasteType, provide a simple text description, not an object. For example: "Mixed plastic and paper waste" or "Organic waste with some metal containers" and dont mention that its difficult to assess definitively from the image also keep details concise and relevant.`;
       const result = await model.generateContent([prompt, ...imageParts]);
       const response = await result.response;
       const text = response.text();
@@ -327,7 +337,11 @@ export default function ReportPage() {
       setIsSubmitting(false);
     }
   };
+
   useEffect(() => {
+    // Only run this effect if the user is authenticated
+    if (!isSignedIn) return;
+
     const checkUser = async () => {
       const email = localStorage.getItem("userEmail");
       if (email) {
@@ -345,11 +359,27 @@ export default function ReportPage() {
         }));
         setReports(formattedReports);
       } else {
+        // If no email in local storage but user is signed in via Clerk
+        // This is a fallback protection
         router.push("/sign-in");
       }
     };
+
     checkUser();
-  }, [router]);
+  }, [router, isSignedIn]);
+
+  // Show loading or redirect if not authenticated
+  if (!authLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  if (authLoaded && !isSignedIn) {
+    return null; // Return null because the useEffect will handle the redirect
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto ">

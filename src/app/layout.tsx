@@ -2,14 +2,13 @@
 import { useState, useEffect } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
 import "leaflet/dist/leaflet.css";
 import { Toaster } from "react-hot-toast";
 import { getAvailableRewards, getUserByEmail } from "@/utils/db/actions";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
+import { neobrutalism } from "@clerk/themes";
 import { GoogleMapsProvider } from "@/components/providers/GoogleMapsProvider";
+import Navbar from "@/components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -48,7 +47,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="flex flex-1">
-        <Sidebar />
+        <Navbar />
         <main className="flex-1 p-4 lg:p-8 ml-0 lg:mt-24 transition-all duration-300">
           {children}
         </main>
@@ -66,15 +65,7 @@ export default function RootLayout({
   return (
     <ClerkProvider
       appearance={{
-        baseTheme: dark,
-        elements: {
-          card: "bg-white shadow-md rounded-lg",
-          navbar: "bg-white shadow-sm",
-          footerActionLink: "text-green-600 hover:text-green-700",
-          formButtonPrimary: "bg-green-600 hover:bg-green-700 text-white",
-          formFieldInput:
-            "border-gray-300 focus:border-green-500 focus:ring-green-500",
-        },
+        baseTheme: neobrutalism,
       }}
     >
       <html lang="en">
