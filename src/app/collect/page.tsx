@@ -1,29 +1,29 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
-import {
-  Trash2,
-  MapPin,
-  CheckCircle,
-  Clock,
-  Upload,
-  Loader,
-  Calendar,
-  Weight,
-  Search,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "react-hot-toast";
 import {
-  getWasteCollectionTasks,
-  updateTaskStatus,
-  saveReward,
-  saveCollectedWaste,
   getUserByEmail,
+  getWasteCollectionTasks,
+  saveCollectedWaste,
+  saveReward,
+  updateTaskStatus,
 } from "@/utils/db/actions";
+import { useAuth } from "@clerk/nextjs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  Loader,
+  MapPin,
+  Search,
+  Trash2,
+  Upload,
+  Weight,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -66,60 +66,33 @@ export default function CollectPage() {
   } | null>(null);
   const [reward, setReward] = useState<number | null>(null);
 
-  // Check auth status and redirect if not signed in
   useEffect(() => {
-    // Wait for Clerk to load authentication data
-    if (!isLoaded) return;
-
-    // If user is not signed in, redirect to sign-in page
-    if (!isSignedIn) {
-      toast.error("You must be signed in to access this page.");
-      router.replace("/sign-in");
-    }
-  }, [isLoaded, isSignedIn, router]);
-
-  // Fetch user data and tasks after authentication is confirmed
-  useEffect(() => {
-    // Only proceed if auth is loaded and user is signed in
-    if (!isLoaded || !isSignedIn) return;
-
-    const fetchUserAndTasks = async () => {
+    const fetchUserDataAndTasks = async () => {
       setLoading(true);
       try {
-        // Get user data from your database using Clerk's userId
-        // You may need to adjust this based on how you store user data
-        const fetchedUser = await getUserByEmail(userId as string);
-        if (fetchedUser) {
-          setUser(fetchedUser);
+        const userEmail = localStorage.getItem("userEmail");
+        if (userEmail) {
+          const fetchedUser = await getUserByEmail(userEmail);
+          if (fetchedUser) {
+            setUser(fetchedUser);
+            const fetchedTasks = await getWasteCollectionTasks();
+            setTasks(fetchedTasks as CollectionTask[]);
+          } else {
+            toast.error("User not found. Please log in again.");
+          }
         } else {
-          toast.error(
-            "User not found in database. Please update your profile.",
-          );
+          toast.error("User not logged in. Please log in.");
         }
-
-        // Fetch tasks data
-        const fetchedTasks = await getWasteCollectionTasks();
-        setTasks(fetchedTasks as CollectionTask[]);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching user data and tasks:", error);
         toast.error("Failed to load data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserAndTasks();
-  }, [isLoaded, isSignedIn, userId]);
-
-  // If Clerk hasn't loaded yet or the user isn't signed in, show loading state
-  if (!isLoaded || !isSignedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <Loader className="animate-spin h-12 w-12 text-gray-500 mb-4" />
-        <p className="text-gray-600">Verifying your account...</p>
-      </div>
-    );
-  }
+    fetchUserDataAndTasks();
+  }, []);
 
   const handleStatusChange = async (
     taskId: number,
@@ -223,16 +196,16 @@ export default function CollectPage() {
         "quantityMatch": boolean,
         "confidence": number
       }
-      
+
       Compare against:
       - Waste Type: ${selectedTask.wasteType}
       - Expected Quantity: ${selectedTask.amount}
-      
+
       Rules:
       - wasteTypeMatch: true if the waste in the image matches ${selectedTask.wasteType}
       - quantityMatch: true if the amount appears to match ${selectedTask.amount}
       - confidence: number between 0 and 1 indicating your confidence level
-      
+
       Return ONLY the JSON object, no additional text or explanation.`;
 
       const result = await model.generateContent([prompt, ...imageParts]);
@@ -304,9 +277,17 @@ export default function CollectPage() {
     currentPage * ITEMS_PER_PAGE,
   );
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="animate-spin h-8 w-8 text-gray-500" />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto ">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800">
+    <div className="max-w-4xl mx-auto ">
+      <h1 className="text-3xl font-semibold mb-6 mt-20 lg:mt-0 text-gray-800">
         Waste Collection Tasks
       </h1>
 
@@ -323,111 +304,103 @@ export default function CollectPage() {
         </Button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader className="animate-spin h-8 w-8 text-gray-500" />
-        </div>
-      ) : (
-        <>
-          <div className="space-y-4">
-            {paginatedTasks.map((task) => (
-              <div
-                key={task.id}
-                className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-medium text-gray-800 flex items-center">
-                    <MapPin className="w-5 h-5 mr-2 text-gray-500" />
-                    {task.location}
-                  </h2>
-                  <StatusBadge status={task.status} />
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-sm text-gray-600 mb-3">
-                  <div className="flex items-center relative">
-                    <Trash2 className="w-4 h-4 mr-2 text-gray-500" />
-                    <span
-                      onMouseEnter={() => setHoveredWasteType(task.wasteType)}
-                      onMouseLeave={() => setHoveredWasteType(null)}
-                      className="cursor-pointer"
-                    >
-                      {task.wasteType.length > 8
-                        ? `${task.wasteType.slice(0, 8)}...`
-                        : task.wasteType}
-                    </span>
-                    {hoveredWasteType === task.wasteType && (
-                      <div className="absolute left-0 top-full mt-1 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
-                        {task.wasteType}
-                      </div>
-                    )}
+      <div className="space-y-4">
+        {paginatedTasks.map((task) => (
+          <div
+            key={task.id}
+            className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-medium text-gray-800 flex items-center">
+                <MapPin className="w-5 h-5 mr-2 text-gray-500" />
+                {task.location}
+              </h2>
+              <StatusBadge status={task.status} />
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-sm text-gray-600 mb-3">
+              <div className="flex items-center relative">
+                <Trash2 className="w-4 h-4 mr-2 text-gray-500" />
+                <span
+                  onMouseEnter={() => setHoveredWasteType(task.wasteType)}
+                  onMouseLeave={() => setHoveredWasteType(null)}
+                  className="cursor-pointer"
+                >
+                  {task.wasteType.length > 8
+                    ? `${task.wasteType.slice(0, 8)}...`
+                    : task.wasteType}
+                </span>
+                {hoveredWasteType === task.wasteType && (
+                  <div className="absolute left-0 top-full mt-1 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10">
+                    {task.wasteType}
                   </div>
-                  <div className="flex items-center">
-                    <Weight className="w-4 h-4 mr-2 text-gray-500" />
-                    {task.amount}
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                    {task.date}
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  {task.status === "pending" && (
-                    <Button
-                      onClick={() => handleStatusChange(task.id, "in_progress")}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Start Collection
-                    </Button>
-                  )}
-                  {task.status === "in_progress" &&
-                    task.collectorId === user?.id && (
-                      <Button
-                        onClick={() => setSelectedTask(task)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Complete & Verify
-                      </Button>
-                    )}
-                  {task.status === "in_progress" &&
-                    task.collectorId !== user?.id && (
-                      <span className="text-yellow-600 text-sm font-medium">
-                        In progress by another collector
-                      </span>
-                    )}
-                  {task.status === "verified" && (
-                    <span className="text-green-600 text-sm font-medium">
-                      Reward Earned
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
-            ))}
+              <div className="flex items-center">
+                <Weight className="w-4 h-4 mr-2 text-gray-500" />
+                {task.amount}
+              </div>
+              <div className="flex items-center">
+                <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                {task.date}
+              </div>
+            </div>
+            <div className="flex justify-end">
+              {task.status === "pending" && (
+                <Button
+                  onClick={() => handleStatusChange(task.id, "in_progress")}
+                  variant="outline"
+                  size="sm"
+                >
+                  Start Collection
+                </Button>
+              )}
+              {task.status === "in_progress" &&
+                task.collectorId === user?.id && (
+                  <Button
+                    onClick={() => setSelectedTask(task)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Complete & Verify
+                  </Button>
+                )}
+              {task.status === "in_progress" &&
+                task.collectorId !== user?.id && (
+                  <span className="text-yellow-600 text-sm font-medium">
+                    In progress by another collector
+                  </span>
+                )}
+              {task.status === "verified" && (
+                <span className="text-green-600 text-sm font-medium">
+                  Reward Earned
+                </span>
+              )}
+            </div>
           </div>
+        ))}
+      </div>
 
-          <div className="mt-4 flex justify-center">
-            <Button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="mr-2"
-            >
-              Previous
-            </Button>
-            <span className="mx-2 self-center">
-              Page {currentPage} of {pageCount}
-            </span>
-            <Button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, pageCount))
-              }
-              disabled={currentPage === pageCount}
-              className="ml-2"
-            >
-              Next
-            </Button>
-          </div>
-        </>
-      )}
+      <div className="mt-4 flex justify-center">
+        <Button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="mr-2"
+        >
+          Previous
+        </Button>
+        <span className="mx-2 self-center">
+          Page {currentPage} of {pageCount}
+        </span>
+        <Button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, pageCount))
+          }
+          disabled={currentPage === pageCount}
+          className="ml-2"
+        >
+          Next
+        </Button>
+      </div>
 
       {selectedTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

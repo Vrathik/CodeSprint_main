@@ -30,6 +30,7 @@
     "@types/google-maps": "^4.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "dotenv": "^16.5.0",
     "drizzle-kit": "^0.24.2",
     "drizzle-orm": "^0.33.0",
     "ethers": "^6.13.5",

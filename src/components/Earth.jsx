@@ -1,20 +1,79 @@
-import React, { forwardRef } from 'react';
-import { useGLTF, Text } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import React, { forwardRef } from "react";
+import { useGLTF, Text } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
-// Sample dataset of countries and their waste production
 const countries = [
-  { name: "China", lat: 35.8617, lng: 104.1954, waste: "200M tons/year", radius: 0.08 },
-  { name: "USA", lat: 37.0902, lng: -95.7129, waste: "150M tons/year", radius: 0.07 },
-  { name: "India", lat: 20.5937, lng: 78.9629, waste: "100M tons/year", radius: 0.06 },
-  { name: "Japan", lat: 36.2048, lng: 138.2529, waste: "45M tons/year", radius: 0.04 },
-  { name: "Germany", lat: 51.1657, lng: 10.4515, waste: "40M tons/year", radius: 0.04 },
-  { name: "Brazil", lat: -14.235, lng: -51.9253, waste: "35M tons/year", radius: 0.04 },
-  { name: "UK", lat: 55.3781, lng: -3.436, waste: "30M tons/year", radius: 0.035 },
-  { name: "France", lat: 46.2276, lng: 2.2137, waste: "28M tons/year", radius: 0.035 },
-  { name: "Russia", lat: 61.524, lng: 105.3188, waste: "25M tons/year", radius: 0.035 },
-  { name: "Canada", lat: 56.1304, lng: -106.3468, waste: "20M tons/year", radius: 0.03 },
+  {
+    name: "China",
+    lat: 35.8617,
+    lng: 104.1954,
+    waste: "200M tons/year",
+    radius: 0.08,
+  },
+  {
+    name: "USA",
+    lat: 37.0902,
+    lng: -95.7129,
+    waste: "150M tons/year",
+    radius: 0.07,
+  },
+  {
+    name: "India",
+    lat: 20.5937,
+    lng: 78.9629,
+    waste: "100M tons/year",
+    radius: 0.06,
+  },
+  {
+    name: "Japan",
+    lat: 36.2048,
+    lng: 138.2529,
+    waste: "45M tons/year",
+    radius: 0.04,
+  },
+  {
+    name: "Germany",
+    lat: 51.1657,
+    lng: 10.4515,
+    waste: "40M tons/year",
+    radius: 0.04,
+  },
+  {
+    name: "Brazil",
+    lat: -14.235,
+    lng: -51.9253,
+    waste: "35M tons/year",
+    radius: 0.04,
+  },
+  {
+    name: "UK",
+    lat: 55.3781,
+    lng: -3.436,
+    waste: "30M tons/year",
+    radius: 0.035,
+  },
+  {
+    name: "France",
+    lat: 46.2276,
+    lng: 2.2137,
+    waste: "28M tons/year",
+    radius: 0.035,
+  },
+  {
+    name: "Russia",
+    lat: 61.524,
+    lng: 105.3188,
+    waste: "25M tons/year",
+    radius: 0.035,
+  },
+  {
+    name: "Canada",
+    lat: 56.1304,
+    lng: -106.3468,
+    waste: "20M tons/year",
+    radius: 0.03,
+  },
 ];
 
 // Convert lat/lng to 3D coordinates
@@ -92,10 +151,10 @@ const GlassMarker = ({ position, radius, name, waste }) => {
 };
 
 const Earth = forwardRef((props, ref) => {
-  const { nodes, materials } = useGLTF('/earth.gltf');
+  const { nodes, materials } = useGLTF("/earth.gltf");
 
   // Enhance the material for better night effects
-  const enhancedMaterial = materials['Scene_-_Root'].clone();
+  const enhancedMaterial = materials["Scene_-_Root"].clone();
   enhancedMaterial.roughness = 1.2;
   enhancedMaterial.metalness = 0.5;
   enhancedMaterial.emissive = new THREE.Color(0x112244);
@@ -105,7 +164,11 @@ const Earth = forwardRef((props, ref) => {
 
   return (
     <group ref={ref} {...props} dispose={null}>
-      <mesh geometry={nodes.Object_4.geometry} material={enhancedMaterial} scale={radius} />
+      <mesh
+        geometry={nodes.Object_4.geometry}
+        material={enhancedMaterial}
+        scale={radius}
+      />
 
       {/* Add glass markers for each country */}
       {countries.map((country, index) => {
@@ -121,12 +184,11 @@ const Earth = forwardRef((props, ref) => {
         );
       })}
     </group>
-
   );
 });
 
-Earth.displayName = 'Earth';
+Earth.displayName = "Earth";
 
 export default Earth;
 
-useGLTF.preload('/earth.gltf');
+useGLTF.preload("/earth.gltf");
