@@ -60,15 +60,35 @@ export default function Navbar() {
   useEffect(() => {
     const initUser = async () => {
       if (isSignedIn && user?.emailAddresses?.[0]?.emailAddress) {
-        const email = user.emailAddresses[0].emailAddress;
-        localStorage.setItem("userEmail", email);
-        await createUser(email, user.fullName || "Anonymous User");
+        try {
+          const email = user.emailAddresses[0].emailAddress;
+          localStorage.setItem("userEmail", email);
+
+          // Will either get existing user or create a new one
+          const dbUser = await createUser(
+            email,
+            user.fullName || "Anonymous User",
+          );
+
+          if (!dbUser) {
+            console.error("Failed to initialize user in database");
+            toast.error(
+              "Error setting up user profile. Please try refreshing the page.",
+            );
+          }
+        } catch (error) {
+          console.error("Error in user initialization:", error);
+          toast.error(
+            "Error setting up user profile. Please try refreshing the page.",
+          );
+        }
       }
     };
 
-    initUser();
-  }, [isSignedIn, user]);
-
+    if (isLoaded) {
+      initUser();
+    }
+  }, [isSignedIn, user, isLoaded]);
   useEffect(() => {
     const fetchNotifications = async () => {
       if (isSignedIn && user?.emailAddresses?.[0]?.emailAddress) {
@@ -134,11 +154,11 @@ export default function Navbar() {
   }, [pathname]);
 
   const AuthButton = () => (
-    <SignInButton>
+    <a href="/sign-in">
       <Button className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto">
         Sign In
       </Button>
-    </SignInButton>
+    </a>
   );
 
   return (

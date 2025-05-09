@@ -3,14 +3,7 @@
 import { useState, useEffect } from "react";
 import { ArrowRight, Leaf, Recycle, Users, Coins, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Poppins } from "next/font/google";
 import Link from "next/link";
-import ContractInteraction from "@/components/ContractInteraction";
-import {
-  getRecentReports,
-  getAllRewards,
-  getWasteCollectionTasks,
-} from "@/utils/db/actions";
 import Globe from "@/components/Globe";
 import Image from "next/image";
 import Logo from "../../public/logo.png";
@@ -39,41 +32,41 @@ export default function Home() {
     tokensEarned: 0,
     co2Offset: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchImpactData() {
+      setIsLoading(true);
       try {
-        const reports = (await getRecentReports(100)) || [];
-        const rewards = (await getAllRewards()) || [];
-        const tasks = (await getWasteCollectionTasks(100)) || [];
+        console.log("Fetching impact data from API...");
 
-        const wasteCollected = tasks.reduce((total, task) => {
-          const match = task.amount.match(/(\d+(\.\d+)?)/);
-          const amount = match ? parseFloat(match[0]) : 0;
-          return total + amount;
-        }, 0);
+        // Use the API route instead of direct database calls
+        const response = await fetch("/api/impact-data");
 
-        const reportsSubmitted = reports.length;
-        const tokensEarned = rewards.reduce(
-          (total, reward) => total + (reward.points || 0),
-          0,
-        );
-        const co2Offset = wasteCollected * 0.5;
+        if (!response.ok) {
+          throw new Error(`API returned status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Impact data received:", data);
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
         setImpactData({
-          wasteCollected: Math.round(wasteCollected * 10) / 10,
-          reportsSubmitted,
-          tokensEarned,
-          co2Offset: Math.round(co2Offset * 10) / 10,
+          wasteCollected: data.wasteCollected,
+          reportsSubmitted: data.reportsSubmitted,
+          tokensEarned: data.tokensEarned,
+          co2Offset: data.co2Offset,
         });
+        setError(null);
       } catch (error) {
-        console.error("Error fetching impact data:", error);
-        setImpactData({
-          wasteCollected: 0,
-          reportsSubmitted: 0,
-          tokensEarned: 0,
-          co2Offset: 0,
-        });
+        console.error("Error in fetchImpactData:", error);
+        setError("Failed to load impact data. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -85,8 +78,8 @@ export default function Home() {
   };
 
   return (
-    <div className={`container mt-8  mx-auto px-4 py-16`}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 mb-20 mt-10 ">
+    <div className="container mt-8 mx-auto px-4 py-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 mb-20 mt-10">
         <section className="flex flex-col justify-between mt-6">
           <AnimatedGlobe />
           <h1 className="text-6xl font-bold mb-6 text-gray-800 tracking-tight">
@@ -120,7 +113,7 @@ export default function Home() {
         </section>
       </div>
 
-      <section className="grid md:grid-cols-3 gap-28 mb-20 ">
+      <section className="grid md:grid-cols-3 gap-28 mb-20">
         <FeatureCard
           icon={Leaf}
           title="Eco-Friendly"
@@ -142,28 +135,45 @@ export default function Home() {
         <h2 className="text-4xl font-bold mb-12 text-center text-gray-800">
           Our Impact
         </h2>
-        <div className="grid md:grid-cols-4">
-          <ImpactCard
-            title="Waste Collected"
-            value={`${impactData.wasteCollected} kg`}
-            icon={Recycle}
-          />
-          <ImpactCard
-            title="Reports Submitted"
-            value={impactData.reportsSubmitted.toString()}
-            icon={MapPin}
-          />
-          <ImpactCard
-            title="Tokens Earned"
-            value={impactData.tokensEarned.toString()}
-            icon={Coins}
-          />
-          <ImpactCard
-            title="CO2 Offset"
-            value={`${impactData.co2Offset} kg`}
-            icon={Leaf}
-          />
-        </div>
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent"></div>
+            <p className="mt-4 text-gray-600">Loading impact data...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">
+            <p>{error}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+            >
+              Retry
+            </Button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-4 gap-4">
+            <ImpactCard
+              title="Waste Collected"
+              value={`${impactData.wasteCollected} kg`}
+              icon={Recycle}
+            />
+            <ImpactCard
+              title="Reports Submitted"
+              value={impactData.reportsSubmitted.toString()}
+              icon={MapPin}
+            />
+            <ImpactCard
+              title="Tokens Earned"
+              value={impactData.tokensEarned.toString()}
+              icon={Coins}
+            />
+            <ImpactCard
+              title="CO2 Offset"
+              value={`${impactData.co2Offset} kg`}
+              icon={Leaf}
+            />
+          </div>
+        )}
       </section>
     </div>
   );
@@ -176,8 +186,8 @@ function ImpactCard({ title, value, icon: Icon }) {
       : value;
 
   return (
-    <div className="p-6 rounded-xl bg-gray-50 border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-md">
-      <Icon className="h-10 w-10 text-green-500 mb-4" />
+    <div className="p-6 rounded-xl bg-gray-50 border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-md text-center">
+      <Icon className="h-10 w-10 text-green-500 mb-4 mx-auto" />
       <p className="text-3xl font-bold mb-2 text-gray-800">{formattedValue}</p>
       <p className="text-sm text-gray-600">{title}</p>
     </div>
